@@ -1,0 +1,50 @@
+# reset_db.py
+
+import os
+import sqlite3
+
+DB_PATH = "expenses.db"
+
+def reset_db():
+    # 1. Delete old database if exists
+    if os.path.exists(DB_PATH):
+        os.remove(DB_PATH)
+        print("✅ Old database deleted.")
+    else:
+        print("ℹ️ No existing DB found. Creating new one...")
+
+    # 2. Create new database with correct schema
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # users table
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL
+    )
+    """)
+
+    # expenses table
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS expenses(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        category TEXT NOT NULL,
+        notes TEXT,
+        item TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        price REAL NOT NULL,
+        total REAL NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+    print("✅ Fresh DB created with tables.")
+
+if __name__ == "__main__":
+    reset_db()
