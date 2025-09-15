@@ -56,12 +56,14 @@ elif menu == "Login":
             if user_id:
                 st.session_state["user_id"] = user_id
                 st.session_state["username_input"] = username
+                
                 # Persist session across refresh
                 with open(SESSION_FILE, "w") as f:
                     f.write(str(user_id))
                 st.success(f"Wlcome {username}!")
             else:
                 st.error("Invalid Credentials")
+
 
 
 elif menu == "Logout":
@@ -78,6 +80,8 @@ elif menu == "Daily Expense":
     if st.session_state["user_id"] is None:
         st.warning("please login first")
     else:
+        st.subheader(f"Welcome, {st.session_state.get("username_input","")}! 👋")
+
         st.subheader("Add Expense")
         with st.form("add_expense",clear_on_submit=True):
             col1,col2,col3,col4=st.columns(4)
