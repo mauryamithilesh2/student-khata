@@ -2,40 +2,27 @@ import streamlit as st
 import pandas as pd
 from db import init_db, add_expense, load_expenses
 from auth import (
-    create_user,
-    authenticate_user,
-    init_user_table,
-    set_login_cookie,
-    logout_user,
-    get_logged_in_user,
+    create_user, authenticate_user, init_user_table,
+    set_login_cookie, logout_user, get_logged_in_user
 )
 from utils import expenses_dashboard
 from datetime import date
 
 st.set_page_config(page_title="Student Khata", layout="wide")
 
-# ----------------- DB Init -----------------
 conn = init_db()
 init_user_table()
 
-
-# ----------------- Restore Session -----------------
 def restore_session():
     """Restore user login from cookie into session_state."""
-    if "user_id" not in st.session_state:
+    if "user_id" not in st.session_state or "username_input" not in st.session_state:
         uid, uname = get_logged_in_user()
         st.session_state["user_id"] = uid
-        st.session_state["username_input"] = uname if uname else ""
-    if "username_input" not in st.session_state:
-        st.session_state["username_input"] = ""
-
+        st.session_state["username_input"] = uname or ""
 
 restore_session()
 
-
-# ----------------- Sidebar Menu -----------------
 menu = st.sidebar.radio("Menu", ["Login", "Signup", "Daily Expense", "Logout"])
-
 
 # ----------------- Signup -----------------
 if menu == "Signup":
@@ -48,7 +35,6 @@ if menu == "Signup":
             st.success("Account Created! Go to Login Page")
         else:
             st.error("Username already exists.")
-
 
 # ----------------- Login -----------------
 elif menu == "Login":
@@ -64,31 +50,26 @@ elif menu == "Login":
             if user_id:
                 st.session_state["user_id"] = user_id
                 st.session_state["username_input"] = username
-
-                set_login_cookie(user_id, username)  # save both in cookie
+                set_login_cookie(user_id)  # Persist login
                 st.success(f"🎉 Welcome {username}!")
                 st.rerun()
             else:
                 st.error("Invalid Credentials")
 
-
 # ----------------- Logout -----------------
 elif menu == "Logout":
     if st.session_state["user_id"]:
         logout_user()
-        st.success("✅ Logged out successfully!")
+        st.success("Logged out successfully!")
     else:
         st.info("You are not logged in.")
-
 
 # ----------------- Daily Expense -----------------
 elif menu == "Daily Expense":
     if st.session_state["user_id"] is None:
         st.warning("Please login first")
     else:
-        st.subheader(
-            f"Welcome, {st.session_state.get('username_input','')}! This is your Khata_Book"
-        )
+        st.subheader(f"Welcome, {st.session_state['username_input']}! This is your Khata Book")
 
         st.subheader("Add Expense")
         with st.form("add_expense", clear_on_submit=True):
@@ -96,7 +77,7 @@ elif menu == "Daily Expense":
             with col1:
                 expense_date = st.date_input("Date", value=date.today())
             with col2:
-                item = st.text_input("Items (i.e milk ,rice)")
+                item = st.text_input("Items (i.e milk , rice)")
             with col3:
                 quantity = st.number_input("Quantity", min_value=1.0, step=1.0)
             with col4:
@@ -107,24 +88,19 @@ elif menu == "Daily Expense":
             if submitted:
                 total = quantity * price
                 add_expense(
-                    conn,
-                    st.session_state["user_id"],
+                    conn, st.session_state["user_id"],
                     expense_date.strftime("%Y-%m-%d"),
-                    item,
-                    quantity,
-                    price,
-                    total,
-                    notes=notes,
+                    item, quantity, price, total, notes=notes
                 )
-                st.success(f"Added  {quantity} x {item} = ₹{total}")
+                st.success(f"Added  {quantity} x {item}   =  ₹ {price} each")
 
         st.subheader("Dashboard")
         df = load_expenses(conn, st.session_state["user_id"])
         if not df.empty:
             edited_df = st.data_editor(
-                df[["id", "date", "item", "quantity", "price", "total", "notes"]],
+                df[['id', 'date', 'item', 'quantity', 'price', 'total', 'notes']],
                 num_rows="dynamic",
-                key="editor",
+                key="editor"
             )
 
             if not edited_df.equals(df):
@@ -132,20 +108,9 @@ elif menu == "Daily Expense":
                     row = edited_df.iloc[i]
                     cur = conn.cursor()
                     cur.execute(
-                        """
-                        UPDATE expenses
-                        SET date=?, item=?, quantity=?, price=?, total=?, notes=?
-                        WHERE id=?
-                        """,
-                        (
-                            row["date"],
-                            row["item"],
-                            row["quantity"],
-                            row["price"],
-                            row["total"],
-                            row["notes"],
-                            row["id"],
-                        ),
+                        "UPDATE expenses SET date=?, item=?, quantity=?, price=?, total=?, notes=? WHERE id=?",
+                        (row["date"], row["item"], row["quantity"], row["price"],
+                         row["total"], row["notes"], row["id"])
                     )
                 conn.commit()
                 st.success("Changes saved to database!")
