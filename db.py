@@ -48,6 +48,7 @@ def init_db():  # initialise db
 
 def add_expense(conn,user_id,date,item,quantity,price,total,category,notes=""):
     total = quantity * price  # calculate total
+    # category = category.strip().title() if category else "Other"
     cur=conn.cursor()
     cur.execute(
         "INSERT INTO expenses(user_id,date,item,quantity,price,total,category,notes) VALUES(?,?,?,?,?,?,?,?)",
