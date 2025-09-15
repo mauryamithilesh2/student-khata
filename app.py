@@ -118,34 +118,36 @@ elif menu == "Daily Expense":
 
         # Dashboard
         st.subheader("Dashboard")
-        df = load_expenses(conn, st.session_state["user_id"])
-        if not df.empty:
-            edited_df = st.data_editor(
-                df[["id", "date", "item", "quantity", "price", "total", "notes"]],
-                num_rows="dynamic",
-                key="editor",
-            )
+        user_id = st.session_state["user_id"]
+        if user_id:   # Only query DB if valid user
+            df = load_expenses(conn, user_id)
+            if not df.empty:
+                edited_df = st.data_editor(
+                    df[["id", "date", "item", "quantity", "price", "total", "notes"]],
+                    num_rows="dynamic",
+                    key="editor",
+                )
 
-            # Detect & save changes
-            if not edited_df.equals(df):
-                for i in range(len(edited_df)):
-                    row = edited_df.iloc[i]
-                    cur = conn.cursor()
-                    cur.execute(
-                        "UPDATE expenses SET date=?, item=?, quantity=?, price=?, total=?, notes=? WHERE id=?",
-                        (
-                            row["date"],
-                            row["item"],
-                            row["quantity"],
-                            row["price"],
-                            row["total"],
-                            row["notes"],
-                            row["id"],
-                        ),
-                    )
-                conn.commit()
-                st.success("Changes saved!")
+                # Detect & save changes
+                if not edited_df.equals(df):
+                    for i in range(len(edited_df)):
+                        row = edited_df.iloc[i]
+                        cur = conn.cursor()
+                        cur.execute(
+                            "UPDATE expenses SET date=?, item=?, quantity=?, price=?, total=?, notes=? WHERE id=?",
+                            (
+                                row["date"],
+                                row["item"],
+                                row["quantity"],
+                                row["price"],
+                                row["total"],
+                                row["notes"],
+                                row["id"],
+                            ),
+                        )
+                    conn.commit()
+                    st.success("Changes saved!")
 
-            expenses_dashboard(df)
-        else:
-            st.info("No expenses yet. Add your first one!")
+                expenses_dashboard(df)
+            else:
+                st.info("No expenses yet. Add your first one!")
