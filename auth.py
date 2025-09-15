@@ -53,35 +53,30 @@ def authenticate_user(username, password):
         return user_id
     return None
 
-# ----------------- Cookie Manager -----------------
-def get_cookie_manager():
-    global _cookie_manager_instance
-    if _cookie_manager_instance is None:
-        _cookie_manager_instance = stx.CookieManager(key="unique_cookie_manager")
-    return _cookie_manager_instance
 
 def set_login_cookie(user_id):
-    cookie_manager = get_cookie_manager()
-    cookie_manager.set("user_id", str(user_id), key="login_cookie")
+    # cookie_manager = get_cookie_manager()
+    # cookie_manager.set("user_id", str(user_id), key="login_cookie")
+    pass
 
-def get_username_from_id(user_id: int):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
-    row = cur.fetchone()
-    conn.close()
-    return row[0] if row else None
+# def get_username_from_id(user_id: int):
+#     conn = get_connection()
+#     cur = conn.cursor()
+#     cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+#     row = cur.fetchone()
+#     conn.close()
+#     return row[0] if row else None
 
 def get_logged_in_user():
-    cookie_manager = get_cookie_manager()
-    user_id = cookie_manager.get("user_id")
-    if user_id:
-        return int(user_id), get_username_from_id(int(user_id))
+    # cookie_manager = get_cookie_manager()
+    # user_id = cookie_manager.get("user_id")
+    # if user_id:
+    #     return int(user_id), get_username_from_id(int(user_id))
     return None, None
 
 def logout_user():
-    cookie_manager = get_cookie_manager()
-    cookie_manager.delete("user_id", key="login_cookie")
+    # cookie_manager = get_cookie_manager()
+    # cookie_manager.delete("user_id", key="login_cookie")
     st.session_state.clear()
     st.session_state["refresh_after_logout"] = True
     st.stop()
