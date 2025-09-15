@@ -53,3 +53,9 @@ def logout_user():
     st.session_state.clear()
     st.session_state["refresh_after_logout"] = True
     st.stop()
+
+
+
+
+def get_logged_in_user():
+    return st.session_state.get("user_id")

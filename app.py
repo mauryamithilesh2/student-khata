@@ -65,17 +65,17 @@ elif menu == "Login":
             st.session_state["user_id"] = user_id
             st.session_state["username_input"] = username
 
-            set_login_cookie(user_id)  # Persist login
-            st.success(f"🎉 Welcome {username}!")
+            # set_login_cookie(user_id)  # Persist login
+            st.success(f" Welcome {username}!")
             st.rerun()
         else:
-            st.error("Invalid credentials ❌")
+            st.error("Invalid credentials ")
 
 
 # ----------------- Logout -----------------
 elif menu == "Logout":
     logout_user()
-    st.success("✅ Logged out successfully!")
+    st.success(" Logged out successfully!")
     st.rerun()
 
 
