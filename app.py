@@ -112,7 +112,7 @@ elif menu == "Daily Expense":
                     quantity,
                     price,
                     total,
-                    notes=notes,
+                    notes,
                 )
                 st.success(f"✅ Added {quantity} × {item} = ₹{total}")
 
