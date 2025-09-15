@@ -5,7 +5,7 @@ from auth import (
     create_user,
     authenticate_user,
     init_user_table,
-    set_login_cookie,
+    
     logout_user,
     get_logged_in_user,
 )
