@@ -1,32 +1,30 @@
 import streamlit as st   # main UIlibrary , built widget,page and chart
 import pandas as pd  # ye read aur  transform tabular data
 from db import init_db,add_expense,load_expenses
-from auth import create_user,authenticate_user,init_user_table,get_connection
+from auth import create_user,authenticate_user,init_user_table,set_login_cookie,logout_user,get_logged_in_user
 from utils import expenses_dashboard
 from datetime import date
 
 import os
 
 st.set_page_config(page_title="Student Khata",layout="wide")
-SESSION_FILE = "current_user.txt"
+# SESSION_FILE = "current_user.txt"
 
 conn=init_db()
 init_user_table()
 
 
+# user_id = get_logged_in_user()
 
-if "user_id" not in st.session_state:
-    st.session_state["user_id"]=None
-if "username_input" not in st.session_state:
-    st.session_state["username_input"] = ""
+def restore_session():
+    """Restore user login from cookie into session_state."""
+    if "user_id" not in st.session_state:
+        st.session_state["user_id"] = get_logged_in_user()
+    if "username_input" not in st.session_state:
+        st.session_state["username_input"] = ""
 
-#Restore session from file 
-if os.path.exists(SESSION_FILE):
-    with open(SESSION_FILE, "r") as f:
-        try:
-            st.session_state["user_id"] = int(f.read())
-        except:
-            st.session_state["user_id"] = None
+restore_session()  # call at the very top
+
 
 
 menu = st.sidebar.radio("Menu",["Login","Signup","Daily Expense","Logout"])
@@ -41,6 +39,10 @@ if menu =="Signup":
             st.success("Account Created! go to Login Page")
         else:
             st.error("Username already exist.")
+
+
+
+
 
 elif menu == "Login":
     st.subheader("Login")
@@ -57,10 +59,10 @@ elif menu == "Login":
                 st.session_state["user_id"] = user_id
                 st.session_state["username_input"] = username
                 
-                # Persist session across refresh
-                with open(SESSION_FILE, "w") as f:
-                    f.write(str(user_id))
-                st.success(f"Wlcome {username}!")
+                
+                set_login_cookie(user_id)  # <-- Persist login
+                st.success(f"🎉 Welcome {username}!")
+                st.experimental_rerun()
             else:
                 st.error("Invalid Credentials")
 
@@ -68,10 +70,8 @@ elif menu == "Login":
 
 elif menu == "Logout":
     if st.session_state["user_id"]:
-        st.session_state["user_id"] = None
-        if os.path.exists(SESSION_FILE):
-            os.remove(SESSION_FILE)
-        st.success("Logged out successfully!")
+        logout_user()
+        st.success("✅ Logged out successfully!")
     else:
         st.info("You are not logged in.")
 
@@ -98,8 +98,9 @@ elif menu == "Daily Expense":
             notes = st.text_input("Notes (optional)")
             submitted = st.form_submit_button("Add more..")
             if submitted:
-                add_expense(conn, st.session_state["user_id"], expense_date.strftime("%Y-%m-%d"),item,quantity,price,category, notes)
-                st.success(f"Added {quantity} x {item} @ ₹{price} each")
+                total=quantity*price
+                add_expense(conn, st.session_state["user_id"], expense_date.strftime("%Y-%m-%d"),item,quantity,price,total, notes=notes)
+                st.success(f"Added  {quantity} x {item}   =  ₹ {price}  each")
 
 
         st.subheader("Dashboard")

@@ -1,16 +1,16 @@
 # it handle signup login , and password hashing
 
-# import streamlit as st
+import streamlit as st
 import sqlite3
 import bcrypt
 from db import get_connection
-# DB_FILE = "expenses.db"
+import extra_streamlit_components as stx
 
-# # ----------------- Connection -----------------
-# def get_connection():
-#     return sqlite3.connect(DB_FILE, check_same_thread=False)
 
-# ----------------- Initialize Users Table -----------------
+
+_cookie_manager_instance = None
+
+
 def init_user_table():
     conn = get_connection()
     cur = conn.cursor()
@@ -58,3 +58,33 @@ def authenticate_user(username, password):
 
     return None
 
+
+
+
+
+# ----------------- Cookie Manager -----------------
+def get_cookie_manager():
+    global _cookie_manager_instance
+    if _cookie_manager_instance is None:
+        _cookie_manager_instance = stx.CookieManager(key="unique_cookie_manager")  # <--- Add key
+    return _cookie_manager_instance
+
+
+def set_login_cookie(user_id):
+    cookie_manager = get_cookie_manager()
+    cookie_manager.set("user_id", str(user_id), key="login_cookie")
+
+
+def get_logged_in_user():
+    cookie_manager = get_cookie_manager()
+    cookie_val = cookie_manager.get("user_id")
+    if cookie_val:
+        return int(cookie_val)
+    return None
+
+
+def logout_user():
+    cookie_manager = get_cookie_manager()
+    cookie_manager.delete("user_id", key="login_cookie")
+    st.session_state.clear()
+    st.experimental_rerun()
