@@ -1,4 +1,4 @@
-# it handle signup login , and password hashing
+# it handles signup, login, password hashing, and cookies
 
 import streamlit as st
 import sqlite3
@@ -6,11 +6,10 @@ import bcrypt
 from db import get_connection
 import extra_streamlit_components as stx
 
-
-
 _cookie_manager_instance = None
 
 
+# ----------------- Database Setup -----------------
 def init_user_table():
     conn = get_connection()
     cur = conn.cursor()
@@ -24,13 +23,17 @@ def init_user_table():
     conn.commit()
     conn.close()
 
-def create_user(username,password):
-    conn=get_connection()
-    cur=conn.cursor()
-    password_hash=bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def create_user(username, password):
+    conn = get_connection()
+    cur = conn.cursor()
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
     try:
-        cur.execute("INSERT INTO users (username,password_hash) VALUES(?,?)",(username,password_hash))
+        cur.execute(
+            "INSERT INTO users (username,password_hash) VALUES(?,?)",
+            (username, password_hash),
+        )
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -50,41 +53,39 @@ def authenticate_user(username, password):
         return None  # username not found
 
     user_id, stored_hash = row
-    if stored_hash is None:
-        return None  # no password hash stored (should not happen)
-    
-    if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+    if stored_hash and bcrypt.checkpw(password.encode(), stored_hash.encode()):
         return user_id
-
     return None
-
-
-
 
 
 # ----------------- Cookie Manager -----------------
 def get_cookie_manager():
     global _cookie_manager_instance
     if _cookie_manager_instance is None:
-        _cookie_manager_instance = stx.CookieManager(key="unique_cookie_manager")  # <--- Add key
+        _cookie_manager_instance = stx.CookieManager(key="unique_cookie_manager")
     return _cookie_manager_instance
 
 
-def set_login_cookie(user_id):
+def set_login_cookie(user_id, username):
     cookie_manager = get_cookie_manager()
     cookie_manager.set("user_id", str(user_id), key="login_cookie")
+    cookie_manager.set("username", username, key="login_cookie_username")
 
 
 def get_logged_in_user():
     cookie_manager = get_cookie_manager()
-    cookie_val = cookie_manager.get("user_id")
-    if cookie_val:
-        return int(cookie_val)
-    return None
+    user_id = cookie_manager.get("user_id")
+    username = cookie_manager.get("username")
+    if user_id:
+        return int(user_id), username
+    return None, None
 
 
 def logout_user():
     cookie_manager = get_cookie_manager()
     cookie_manager.delete("user_id", key="login_cookie")
-    st.session_state.clear()
-    st.experimental_rerun()
+    cookie_manager.delete("username", key="login_cookie_username")
+    st.session_state.pop("user_id", None)
+    st.session_state.pop("username_input", None)
+    st.session_state["refresh_after_logout"] = True
+    st.stop()
